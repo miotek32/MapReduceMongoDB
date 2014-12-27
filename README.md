@@ -1,4 +1,2 @@
-MapReduceMongoDB
-================
+Using work in other branch.
 
-Using Map reduce in MongoDB
