@@ -48,7 +48,7 @@ LoadData <- function(filename,howMuch,nameDatabase){
   numberCores <- detectCores()
   fileOpen <- file(filename,open ="r")
   mongo <- mongo.create()
-  
+
   if(mongo.is.connected(mongo)){
     CheckAndRemoveCollection(mongo,nameDatabase)
     while(length(readLine <- readLines(fileOpen,n=howMuch,warn=FALSE)) > 0){
@@ -56,7 +56,7 @@ LoadData <- function(filename,howMuch,nameDatabase){
       list <- PrepareData(readLine)
       bsonList <- lapply(list,MakeListBson)
       mongo.insert.batch(mongo,nameDatabase,bsonList)
-      msg <- paste("Add",howMuch,"records per",howMuch,sep=" ")
+      msg <- paste("Add",howMuch,"records per",numberSteps,sep=" ")
       print(msg)
     }
   }
@@ -68,9 +68,3 @@ main <- function(filename,howMuch,nameDatabase){
 }
 
 main("data/sample.txt",10000,"test.marta2")
-
-
-
-
-
-
