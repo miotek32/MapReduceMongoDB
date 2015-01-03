@@ -4,15 +4,9 @@ library(plyr)
 library(parallel)
 
 PrepareLine <- function(readLine){
-  readLine <- gsub('[[:punct:]]',"",readLine)
   splitLine <- str_split(readLine,"\\s+")
   splitLine <- unlist(splitLine)
-  if(splitLine[1] == ""){
-    splitLine <- splitLine[-1]
-  }
-  if(length(splitLine) >= 8 && length(splitLine) <= 14){
-    return (splitLine[-length(splitLine)])
-  }
+  return (splitLine)
 }
 
 MakeListBson <- function(object){
@@ -67,4 +61,4 @@ main <- function(filename,howMuch,nameDatabase){
   LoadData(filename,howMuch,nameDatabase)
 }
 
-main("data/sample.txt",10000,"test.marta2")
+main("sample.csv",100,"test.marta")
