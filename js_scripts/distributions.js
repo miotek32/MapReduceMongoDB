@@ -1,5 +1,6 @@
 //How many sentences has distribution greater than one
-var coll = db.result;
+resultPol = db.resultPol;
+resultEng = db.resultEng;
 
 map = function(){
     emit("answer",{value: this.value, sum: this.value,notUnique: 0});
@@ -23,6 +24,9 @@ final = function(key,reducedValue){
   result.notUnique = reducedValue.notUnique;
   return result;
 }
-
-var result = coll.mapReduce(map, reduce, {out: {inline: 1}, finalize: final});
+print("Statistic for Polish sentences\n");
+var result = resultPol.mapReduce(map, reduce, {out: {inline: 1}, finalize: final});
 printjson(result);
+print("Statistic for English sentences\n");
+var result2 = resultEng.mapReduce(map, reduce, {out: {inline: 1}, finalize: final});
+printjson(result2);

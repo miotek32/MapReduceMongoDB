@@ -1,4 +1,5 @@
-coll = db.marta;
+polishCollection = db.polishSentences;
+englishCollection = db.englishSentences;
 
 map = function(){
   var split = this.originalText.match(/\b\w/g);
@@ -10,5 +11,7 @@ reduce = function(key,values){
   return Array.sum(values);
 };
 
-var res = coll.mapReduce(map, reduce, {out: "result"});
-printjson(res);
+var resultPolish = polishCollection.mapReduce(map, reduce, {out: "resultPol"});
+printjson(resultPolish);
+var resultEnglish = englishCollection.mapReduce(map, reduce, {out: "resultEng"});
+printjson(resultEnglish);
