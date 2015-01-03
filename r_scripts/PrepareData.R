@@ -61,4 +61,9 @@ main <- function(filename,howMuch,nameDatabase){
   LoadData(filename,howMuch,nameDatabase)
 }
 
-main("sample.csv",10000,"test.marta")
+args = commandArgs(trailingOnly = TRUE)
+if(length(args) < 3 ){
+  stop("Correct usage: Rscript PrepareData.R <filename> <how lines load> <name collections>")
+}
+
+main(as.character(args[1]),as.numeric(args[2]),as.character(args[3]))
