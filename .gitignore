@@ -9,3 +9,8 @@
 
 # RStudio files
 .Rproj.user/
+
+# Data files
+polish.csv
+english.csv
+sentences.csv

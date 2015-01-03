@@ -1,7 +1,7 @@
 coll = db.marta;
 
 map = function(){
-  var split = this.originalText.match(/\b\S/g);
+  var split = this.originalText.match(/\b\w/g);
   var result = split.join("");
     emit(result,{list: [this.originalText],count: 1});
 };

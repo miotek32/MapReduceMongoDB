@@ -61,4 +61,4 @@ main <- function(filename,howMuch,nameDatabase){
   LoadData(filename,howMuch,nameDatabase)
 }
 
-main("sample.csv",100,"test.marta")
+main("sample.csv",10000,"test.marta")
