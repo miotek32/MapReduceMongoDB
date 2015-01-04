@@ -631,6 +631,8 @@ Dla języka polskiego:
 |Pr(X=nieunikalny)|0.01|0.01|0.02|0.01|0.02|
 |Pr(X=unikalny|0.99|0.99|0.98|0.99|0.98|
 
+![graph](images/distribution.png)
+
 Dla języka angielskiego:
 
 ||Orginalny przypadek|Bez stop słów|Posortowanie liter|Nierozróżnianie wielkości liter|Nierozróżnianie liter + posortowanie|
@@ -640,6 +642,8 @@ Dla języka angielskiego:
 |Pr(X=nieunikalny)|0.05|0.03|0.16|0.06|0.16|
 |Pr(X=unikalny)|0.95|0.97|0.84|0.94|0.84|
 
+![graph](images/english.png)
+
 ### Wnioski
 - Jeśli chodzi o rozkład pierwszych liter to samogłoski stanowią około 25% liter.
 - Dla otrzymanych danych usunięcie stop słów diametralnie zmniejszyło jego ilość, aby otrzymać zdanie składające się z 6-12 słów.
@@ -647,3 +651,5 @@ Dla języka angielskiego:
 - Dla języka polskiego jest bardzo mało nieunikalnych rozkładów, ale zbiór testowy był niewielki.
 - Jeśli do podanej metody dodamy jeszcze występowanie pomiędzy literami znaków specjalnych czy dodawaniu większej ilości dużych liter czy nawet liczb to nasze hasło nie powinno być tak łatwo odgadnięte.
 - Jeśli chodzi o MongoDB 2.8.0.rc4 to MapReduce wykonuje się generalnie wolniej.
+
+![result](images/mongoStatistic.png)
