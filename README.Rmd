@@ -577,6 +577,8 @@ Będziemy badać unikalność oraz czas wykonania skryptów w MongoDB.
 #### Rozkłady liter bez tak zwanych stop-słów.
 
 Usuniemy z sentencji stop słowa i sprawdzimy unikalność rozkładów liter.
+Jednak musimy zmodyfikować aby po usunięciu stop-słów nadal będziemy mieli nasz wymagany przedział **6-12 słów**.
+Przygotowanie i załadowanie danych wykonuje skrypt **LoadDataStop.sh**.
 
 #### Posortowanie rozkładów liter.
 |Kolekcja|splitSort.js|splitWithSentence.js|distributions.js|maxNotUnique.js|aeiou.js|
@@ -601,12 +603,12 @@ Dla języka polskiego:
 
 ||Orginalny przypadek|Bez stop słów|Posortowanie liter|Nierozróżnianie wielkości liter|Nierozróżnianie liter + posortowanie|
 |-------|-------------------|-------------|------------------|-------------------------------|------------------|
-|Unikalne rozkłady|27613|0|27372|27586|27366|
-|Nieunikalne rozkłady|321|0|562|348|568|
+|Unikalne rozkłady|27613|6206|27372|27586|27366|
+|Nieunikalne rozkłady|321|36|562|348|568|
 
 Dla języka angielskiego:
 
 ||Orginalny przypadek|Bez stop słów|Posortowanie liter|Nierozróżnianie wielkości liter|Nierozróżnianie liter + posortowanie|
 |-------|-------------------|-------------|------------------|-------------------------------|------------------|
-|Unikalne rozkłady|285367|0|254439|283595|254210|
-|Nieunikalne rozkłady|15753|0|46681|17525|46910|
+|Unikalne rozkłady|285367|43194|254439|283595|254210|
+|Nieunikalne rozkłady|15753|1371|46681|17525|46910|
