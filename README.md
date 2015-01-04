@@ -591,12 +591,18 @@ Przygotowanie i załadowanie danych wykonuje skrypt **LoadDataStop.sh**.
 |englishSentences|18 s|18 s|6 s|7 s|8.3 s|
 
 #### Podsumowanie wyników:
+Poniższe tabele pokazują liczbę unikalnych i nieunikalnych rozkładów w danym przypadku.
+Jeśli chodzi o orginalny przypadek to mamy **27934** sentencje polskie oraz **301120** sentencji angielskich.
+Gorzej jeśli chodzi o sentencję bez stop słów. Tutaj mamy **6242** sentencji polskich oraz **44565** sentencji angielskich.
+
 Dla języka polskiego:
 
 ||Orginalny przypadek|Bez stop słów|Posortowanie liter|Nierozróżnianie wielkości liter|Nierozróżnianie liter + posortowanie|
 |-------|-------------------|-------------|------------------|-------------------------------|------------------|
 |Unikalne rozkłady|27613|6206|27372|27586|27366|
 |Nieunikalne rozkłady|321|36|562|348|568|
+|Pr(X=nieunikalny)|0.01|0.01|0.02|0.01|0.02|
+|Pr(X=unikalny|0.99|0.99|0.98|0.99|0.98|
 
 Dla języka angielskiego:
 
@@ -604,3 +610,5 @@ Dla języka angielskiego:
 |-------|-------------------|-------------|------------------|-------------------------------|------------------|
 |Unikalne rozkłady|285367|43194|254439|283595|254210|
 |Nieunikalne rozkłady|15753|1371|46681|17525|46910|
+|Pr(X=nieunikalny)|0.05|0.03|0.16|0.06|0.16|
+|Pr(X=unikalny)|0.95|0.97|0.84|0.94|0.84|
