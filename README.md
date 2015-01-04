@@ -18,6 +18,7 @@ Wersja MongoDB: 2.6.5 oraz 2.8.0.rc0
 Coraz częściej słyszymy o atakach na różne serwisy www oraz o nieodpowiedzialności administratorów, którzy mają bardzo słabe hasła. 
 Jak stworzyć silne hasło: jest opinia, która mówi że należy wymyśleć sobie jakieś zdanie i za hasło wziąść pierwsze litery wyrazów w tym zdaniu. Eksperyment, który przeprowadziłem sprawdził czy ta metoda ma sens poprzez sprawdzenie czy hasła są unikalne to znaczy czy są zdania które posiadają ten sam rozkład liter.
 Poza tym zastanowić się można jak można ulepszyć tą metodę. 
+
 Nasuwają się następujące pytania: 
 - Czy usunięciu ```stop-słów``` zwiększa unikalność haseł.
 - Czy posortowanie liter w rozkładzie zwiększy nieunikalność haseł.
@@ -30,6 +31,16 @@ Do przeprowadzenia eksperymentu użyłem pliku ```sentences.tar.bz2``` ze strony
 
 Ponieważ plik ze strony **tatoeba.org** zawiera sentencje w wielu językach świata musimy przerobić i wydzielić do innych plików sentencje polskie i angielskie.
 Następnie dane musimy załadować do MongoDB.
+Fragment otrzymanego pliku: 
+```
+...
+5131  jpn	2006年上海では15万組の夫婦が結婚すると予想されている。
+5132	jpn	ニジェールでは50万人もの子供たちが未だ栄養失調に直面している。
+...
+53010  eng	Judy is a most clever student.
+53011	 eng	Judy is fond of dancing.
+...
+```
 Do przetworzenia danych należy uruchomić skrypt **PrepareData.sh**, ktory:
 - Pobiera plik ze strony **tatoeba.org**
 - Rozpakowuje plik do folderu **data**
@@ -563,6 +574,13 @@ English sentences:
 |polishSentences|1.5 s|1.7 s|0.6 s|1 s|0.9 s|
 |englishSentences|16 s|19 s|6.3 s|10 s|8.5 s|
 
+#### Zestawienie czasów wykonania MapReduce w mongo 2.8.0.rc4 + wiredTiger + zlib
+
+|Kolekcja|split.js|splitWithSentence.js|distributions.js|maxNotUnique.js|aeiou.js|
+|--------|--------|--------------------|----------------|---------------|--------|
+|polishSentences|4.3 s|4.8 s|0.6 s|0.7 s|0.8 s|
+|englishSentences|45 s|51 s|6.3 s|7.8 s|8.5 s|
+
 ### Inne przypadki:
 Będziemy badać unikalność oraz czas wykonania skryptów w MongoDB.
 
@@ -594,6 +612,7 @@ Przygotowanie i załadowanie danych wykonuje skrypt **LoadDataStop.sh**.
 Poniższe tabele pokazują liczbę unikalnych i nieunikalnych rozkładów w danym przypadku.
 Jeśli chodzi o orginalny przypadek to mamy **27934** sentencje polskie oraz **301120** sentencji angielskich.
 Gorzej jeśli chodzi o sentencję bez stop słów. Tutaj mamy **6242** sentencji polskich oraz **44565** sentencji angielskich.
+Poza tym obliczyłem prawdopodobieństwo że dana sentencja jest unikalna lub nieunikalna.
 
 Dla języka polskiego:
 
@@ -612,3 +631,11 @@ Dla języka angielskiego:
 |Nieunikalne rozkłady|15753|1371|46681|17525|46910|
 |Pr(X=nieunikalny)|0.05|0.03|0.16|0.06|0.16|
 |Pr(X=unikalny)|0.95|0.97|0.84|0.94|0.84|
+
+### Wnioski
+- Jeśli chodzi o rozkład pierwszych liter to samogłoski stanowią około 25% liter.
+- Dla otrzymanych danych usunięcie stop słów diametralnie zmniejszyło jego ilość, aby otrzymać zdanie składające się z 6-12 słów.
+- Jeśli chodzi o język angielski to prawdopodobieństwo że ktoś będzie miał takie same hasło co my wygenerowaną daną metodą jest niewielkie. Chyba że nie będziemy używać dużych liter lub co jest jeszcze gorsze posortujemy sobie te litery.
+- Dla języka polskiego jest bardzo mało nieunikalnych rozkładów, ale zbiór testowy był niewielki.
+- Jeśli do podanej metody dodamy jeszcze występowanie pomiędzy literami znaków specjalnych czy dodawaniu większej ilości dużych liter czy nawet liczb to nasze hasło nie powinno być tak łatwo odgadnięte.
+- Jeśli chodzi o MongoDB 2.8.0.rc4 to MapReduce wykonuje się generalnie wolniej.
