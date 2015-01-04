@@ -1,6 +1,14 @@
-# Map reduce on MongoDB
-Mateusz Miotk  
-04.01.2015  
+---
+title: "Map reduce on MongoDB"
+author: "Mateusz Miotk"
+date: "04.01.2015"
+output:
+  html_document:
+    toc: true
+    keep_md: yes
+    theme: readable
+  pdf_document: default
+---
 
 ```
 Sprzęt: 
