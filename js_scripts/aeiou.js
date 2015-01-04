@@ -7,7 +7,7 @@ map = function(){
   var split = this.originalText.toLowerCase().match(/\b\w/g);
   var result = split.join("");
   var r = result.match(/[aeiou]/g);
-  var s = result.match(/[^aeiou]/g);
+  var s = result.match(/[^aeiou0-9]/g);
   if(r){
     sam = r.length;
   }
@@ -29,5 +29,7 @@ reduce = function(key,values){
 
 var a = polishCollection.mapReduce(map, reduce, {out: {inline: 1}});
 var b = englishCollection.mapReduce(map, reduce, {out: {inline: 1}});
+print ("Polish sentences:\n");
 printjson(a);
+print ("English sentences:\n");
 printjson(b);

@@ -170,6 +170,103 @@ Podgląd do bazy, który otrzymaliśmy:
 }
 ```
 
+#### Zapis do kolekcjiw której będą zapisane sentencję - splitWithSentence.js.
+
+Powyższa baza niewiele nam mówi bo nie mamy przedewszystkim jakie zdanie mają dany rozkład, dlatego zmodyfikujemy trochę plik.
+
+Kod pliku:
+```js
+polishCollection = db.polishSentences;
+englishCollection = db.englishSentences;
+
+map = function(){
+  var split = this.originalText.match(/\b\w/g);
+  var result = split.join("");
+    emit(result,{list: [this.originalText],count: 1});
+};
+
+reduce = function(key,values){
+  var list =  [];
+  var count = 0;
+  values.forEach(function(item){
+    list = item.list.concat(list);
+    count += item.count;
+  });
+  return ({list: list,count: count});
+};
+
+var resultPolish = polishCollection.mapReduce(map, reduce, {out: "result2Pol"});
+printjson(resultPolish);
+var resultEnglish = englishCollection.mapReduce(map, reduce, {out: "result2Eng"});
+printjson(resultEnglish);
+```
+Otrzymany wynik:
+```js
+{
+  "result" : "result2Pol",
+	"timeMillis" : 1723,
+	"counts" : {
+		"input" : 27934,
+		"emit" : 27934,
+		"reduce" : 159,
+		"output" : 27771
+	},
+	"ok" : 1
+}
+{
+	"result" : "result2Eng",
+	"timeMillis" : 19181,
+	"counts" : {
+		"input" : 301120,
+		"emit" : 301120,
+		"reduce" : 7668,
+		"output" : 292684
+	},
+	"ok" : 1
+}
+```
+Podgląd do otrzymanej bazy:
+```js
+{
+  "_id": "13itnawIcbr",
+  "value": {
+    "list": [
+      "104-3820 is the number at which I can be reached."
+    ],
+    "count": 1
+  }
+}
+{
+  "_id": "1Fctcbm",
+  "value": {
+    "list": [
+      "1. Finely chop the chicken breast meat."
+    ],
+    "count": 1
+  }
+}
+{
+  "_id": "ADtphi",
+  "value": {
+    "list": [
+      "A DNA test proved her innocence.",
+      "A DNA test proved his innocence."
+    ],
+    "count": 2
+  }
+}
+{
+  "_id": "AItoowttiw",
+  "value": {
+    "list": [
+      "Am I the only one who thinks this is weird?",
+      "Am I the only one who thinks this is wrong?"
+    ],
+    "count": 2
+  }
+}
+```
+
 #### Obliczenie unikalnych i nieunikalnych rozkładów - distributions.js.
 
 Jak już widać niektóre rozkłady występują więcej niż 1 raz. Policzmy ile jest takich rozkładów w obu przypadkach.
@@ -251,3 +348,257 @@ Statistic for English sentences:
 	"ok" : 1
 }
 ```
+#### Obliczenie maximum z występowania rozkładu liter - maxNotUnique.js
+
+Teraz policzymy jaki rozkład liter najczęsciej występuje w sentencjach.
+
+Kod pliku:
+```js
+polishCollection = db.result2Pol;
+englishCollection = db.result2Eng;
+
+map = function () {
+    var x = { count : this.value.count , _id : this._id };
+    emit("maximum", { max : x } )
+}
+
+reduce = function(key,values){
+  var res = values[0];
+    for ( var i=1; i<values.length; i++ ) {
+      if ( values[i].max.count > res.max.count )
+         res.max = values[i].max;
+    }
+    return res;
+}
+
+var result = polishCollection.mapReduce(map, reduce, {out: {inline: 1}});
+printjson(result);
+var result2 = englishCollection.mapReduce(map, reduce, {out: {inline: 1}});
+printjson(result2);
+```
+Otrzymany wynik:
+```js
+Maximum of polish sentences:
+{
+  "results" : [
+		{
+			"_id" : "maximum",
+			"value" : {
+				"max" : {
+					"count" : 4,
+					"_id" : "Nmontp"
+				}
+			}
+		}
+	],
+	"timeMillis" : 952,
+	"counts" : {
+		"input" : 27771,
+		"emit" : 27771,
+		"reduce" : 278,
+		"output" : 1
+	},
+	"ok" : 1
+}
+Maximum of english sentences:
+{
+	"results" : [
+		{
+			"_id" : "maximum",
+			"value" : {
+				"max" : {
+					"count" : 20,
+					"_id" : "DytTiu"
+				}
+			}
+		}
+	],
+	"timeMillis" : 9915,
+	"counts" : {
+		"input" : 292684,
+		"emit" : 292684,
+		"reduce" : 2927,
+		"output" : 1
+	},
+	"ok" : 1
+}
+```
+Sprawdźmy jakie zdania mają podane rozkłady:
+Rozkład **Nmontp**:
+```js
+{
+  "_id": "Nmontp",
+  "value": {
+    "list": [
+      "Nie ma odpowiedzi na twoje pytanie.",
+      "Nie musisz odpowiadać na to pytanie.",
+      "Nie musisz odpowiadać na te pytania.",
+      "Nie mamy odpowiedzi na to pytanie."
+    ],
+    "count": 4
+  }
+}
+```
+Rozkład **DytTiu**:
+```js
+{
+  "_id": "DytTiu",
+  "value": {
+    "list": [
+      "Do you think Tom is ugly?",
+      "Do you think Tom is unapproachable?",
+      "Do you think Tom is unbiased?",
+      "Do you think Tom is unfair?",
+      "Do you think Tom is unfriendly?",
+      "Do you think Tom is unhappy?",
+      "Do you think Tom is uninteresting?",
+      "Do you think Tom is unkind?",
+      "Do you think Tom is unlucky?",
+      "Do you think Tom is unpleasant?",
+      "Do you think Tom is unpredictable?",
+      "Do you think Tom is unprejudiced?",
+      "Do you think Tom is unprincipled?",
+      "Do you think Tom is unreliable?",
+      "Do you think Tom is unscrupulous?",
+      "Do you think Tom is unsociable?",
+      "Do you think Tom is untidy?",
+      "Do you think Tom is untrustworthy?",
+      "Do you think Tom is upbeat?",
+      "Do you think Tom is unsophisticated?"
+    ],
+    "count": 20
+  }
+}
+```
+#### Obliczenie ilości samogłosek i spółgłosek w słowach - aeiou.js
+
+Policzymy tu wyłącznie samogłoski angielskie, ponieważ dodatkowe polskie samogłoski rzadko występowały jako pierwsza litera w słowie.
+
+Kod pliku: 
+```js
+polishCollection = db.polishSentences;
+englishCollection = db.englishSentences;
+
+map = function(){
+  var sam = 0;
+  var spol = 0;
+  var split = this.originalText.toLowerCase().match(/\b\w/g);
+  var result = split.join("");
+  var r = result.match(/[aeiou]/g);
+  var s = result.match(/[^aeiou]/g);
+  if(r){
+    sam = r.length;
+  }
+  if(s){
+    spol = s.length;
+  }
+  emit("answer",{samo: sam,spol: spol});
+};
+
+reduce = function(key,values){
+  var a = values[0];
+  for(var i=1; i < values.length;i++){
+    var b = values[i];
+     a.samo += b.samo;
+     a.spol += b.spol;
+  }
+  return a;
+};
+
+var a = polishCollection.mapReduce(map, reduce, {out: {inline: 1}});
+var b = englishCollection.mapReduce(map, reduce, {out: {inline: 1}});
+print "Polish sentences:\n"
+printjson(a);
+print "English sentences:\n"
+printjson(b);
+```
+Otrzymany wynik:
+```js
+Polish sentences:
+{
+  "results" : [
+		{
+			"_id" : "answer",
+			"value" : {
+				"samo" : 37873,
+				"spol" : 211243
+			}
+		}
+	],
+	"timeMillis" : 884,
+	"counts" : {
+		"input" : 27934,
+		"emit" : 27934,
+		"reduce" : 280,
+		"output" : 1
+	},
+	"ok" : 1
+}
+English sentences:
+{
+	"results" : [
+		{
+			"_id" : "answer",
+			"value" : {
+				"samo" : 587866,
+				"spol" : 1892526
+			}
+		}
+	],
+	"timeMillis" : 8452,
+	"counts" : {
+		"input" : 301120,
+		"emit" : 301120,
+		"reduce" : 3012,
+		"output" : 1
+	},
+	"ok" : 1
+}
+```
+
+#### Zestawienie czasów wykonania MapReduce w mongo 2.6.6
+
+|Kolekcja|split.js|splitWithSentence.js|distributions.js|maxNotUnique.js|aeiou.js|
+|--------|--------|--------------------|----------------|---------------|--------|
+|polishSentences|1.5 s|1.7 s|0.6 s|1 s|0.9 s|
+|englishSentences|16 s|19 s|6.3 s|10 s|8.5 s|
+
+### Inne przypadki:
+Będziemy badać unikalność oraz czas wykonania skryptów w MongoDB.
+
+#### Rozkłady liter bez tak zwanych stop-słów.
+
+Usuniemy z sentencji stop słowa i sprawdzimy unikalność rozkładów liter.
+
+#### Posortowanie rozkładów liter.
+|Kolekcja|splitSort.js|splitWithSentence.js|distributions.js|maxNotUnique.js|aeiou.js|
+|--------|--------|--------------------|----------------|---------------|--------|
+|polishSentences|1.5 s|1.8 s|0.6 s|0.7 s|0.9 s|
+|englishSentences|17 s|19 s|6 s|7 s|8.3 s|
+
+#### Nierozróżnianie wielkich i małych liter.
+|Kolekcja|splitToLower.js|splitWithSentence.js|distributions.js|maxNotUnique.js|aeiou.js|
+|--------|--------|--------------------|----------------|---------------|--------|
+|polishSentences|1.5 s|1.8 s|0.6 s|0.7 s|0.9 s|
+|englishSentences|16 s|19 s|6 s|7 s|8.3 s|
+
+#### Nierozróżnianie wielkich i małych liter z posortowaniem.
+|Kolekcja|splitToLower.js|splitWithSentence.js|distributions.js|maxNotUnique.js|aeiou.js|
+|--------|--------|--------------------|----------------|---------------|--------|
+|polishSentences|1.7 s|1.7 s|0.6 s|0.7 s|0.9 s|
+|englishSentences|18 s|18 s|6 s|7 s|8.3 s|
+
+#### Podsumowanie wyników:
+Dla języka polskiego:
+
+||Orginalny przypadek|Bez stop słów|Posortowanie liter|Nierozróżnianie wielkości liter|Nierozróżnianie liter + posortowanie|
+|-------|-------------------|-------------|------------------|-------------------------------|------------------|
+|Unikalne rozkłady|27613|0|27372|27586|27366|
+|Nieunikalne rozkłady|321|0|562|348|568|
+
+Dla języka angielskiego:
+
+||Orginalny przypadek|Bez stop słów|Posortowanie liter|Nierozróżnianie wielkości liter|Nierozróżnianie liter + posortowanie|
+|-------|-------------------|-------------|------------------|-------------------------------|------------------|
+|Unikalne rozkłady|285367|0|254439|283595|254210|
+|Nieunikalne rozkłady|15753|0|46681|17525|46910|

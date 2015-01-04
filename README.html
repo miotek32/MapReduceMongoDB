@@ -63,6 +63,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <li><a href="#motywacja">Motywacja</a></li>
 <li><a href="#przygotowanie-danych">Przygotowanie danych</a></li>
 <li><a href="#mapreduce-w-sentencjach-polskich-i-angielskich.">MapReduce w sentencjach polskich i angielskich.</a></li>
+<li><a href="#inne-przypadki">Inne przypadki:</a></li>
 </ul></li>
 </ul>
 </div>
@@ -207,6 +208,96 @@ printjson(resultEnglish);</code></pre>
   &quot;value&quot;: 2
 }</code></pre>
 </div>
+<div id="zapis-do-kolekcjiw-ktorej-beda-zapisane-sentencje---splitwithsentence.js." class="section level4">
+<h4>Zapis do kolekcjiw której będą zapisane sentencję - splitWithSentence.js.</h4>
+<p>Powyższa baza niewiele nam mówi bo nie mamy przedewszystkim jakie zdanie mają dany rozkład, dlatego zmodyfikujemy trochę plik.</p>
+<p>Kod pliku:</p>
+<pre class="js"><code>polishCollection = db.polishSentences;
+englishCollection = db.englishSentences;
+
+map = function(){
+  var split = this.originalText.match(/\b\w/g);
+  var result = split.join(&quot;&quot;);
+    emit(result,{list: [this.originalText],count: 1});
+};
+
+reduce = function(key,values){
+  var list =  [];
+  var count = 0;
+  values.forEach(function(item){
+    list = item.list.concat(list);
+    count += item.count;
+  });
+  return ({list: list,count: count});
+};
+
+var resultPolish = polishCollection.mapReduce(map, reduce, {out: &quot;result2Pol&quot;});
+printjson(resultPolish);
+var resultEnglish = englishCollection.mapReduce(map, reduce, {out: &quot;result2Eng&quot;});
+printjson(resultEnglish);</code></pre>
+<p>Otrzymany wynik:</p>
+<pre class="js"><code>{
+  &quot;result&quot; : &quot;result2Pol&quot;,
+    &quot;timeMillis&quot; : 1723,
+    &quot;counts&quot; : {
+        &quot;input&quot; : 27934,
+        &quot;emit&quot; : 27934,
+        &quot;reduce&quot; : 159,
+        &quot;output&quot; : 27771
+    },
+    &quot;ok&quot; : 1
+}
+{
+    &quot;result&quot; : &quot;result2Eng&quot;,
+    &quot;timeMillis&quot; : 19181,
+    &quot;counts&quot; : {
+        &quot;input&quot; : 301120,
+        &quot;emit&quot; : 301120,
+        &quot;reduce&quot; : 7668,
+        &quot;output&quot; : 292684
+    },
+    &quot;ok&quot; : 1
+}</code></pre>
+<p>Podgląd do otrzymanej bazy:</p>
+<pre class="js"><code>{
+  &quot;_id&quot;: &quot;13itnawIcbr&quot;,
+  &quot;value&quot;: {
+    &quot;list&quot;: [
+      &quot;104-3820 is the number at which I can be reached.&quot;
+    ],
+    &quot;count&quot;: 1
+  }
+}
+{
+  &quot;_id&quot;: &quot;1Fctcbm&quot;,
+  &quot;value&quot;: {
+    &quot;list&quot;: [
+      &quot;1. Finely chop the chicken breast meat.&quot;
+    ],
+    &quot;count&quot;: 1
+  }
+}
+{
+  &quot;_id&quot;: &quot;ADtphi&quot;,
+  &quot;value&quot;: {
+    &quot;list&quot;: [
+      &quot;A DNA test proved her innocence.&quot;,
+      &quot;A DNA test proved his innocence.&quot;
+    ],
+    &quot;count&quot;: 2
+  }
+}
+{
+  &quot;_id&quot;: &quot;AItoowttiw&quot;,
+  &quot;value&quot;: {
+    &quot;list&quot;: [
+      &quot;Am I the only one who thinks this is weird?&quot;,
+      &quot;Am I the only one who thinks this is wrong?&quot;
+    ],
+    &quot;count&quot;: 2
+  }
+}</code></pre>
+</div>
 <div id="obliczenie-unikalnych-i-nieunikalnych-rozkadow---distributions.js." class="section level4">
 <h4>Obliczenie unikalnych i nieunikalnych rozkładów - distributions.js.</h4>
 <p>Jak już widać niektóre rozkłady występują więcej niż 1 raz. Policzmy ile jest takich rozkładów w obu przypadkach.</p>
@@ -283,6 +374,405 @@ Statistic for English sentences:
     },
     &quot;ok&quot; : 1
 }</code></pre>
+</div>
+<div id="obliczenie-maximum-z-wystepowania-rozkadu-liter---maxnotunique.js" class="section level4">
+<h4>Obliczenie maximum z występowania rozkładu liter - maxNotUnique.js</h4>
+<p>Teraz policzymy jaki rozkład liter najczęsciej występuje w sentencjach.</p>
+<p>Kod pliku:</p>
+<pre class="js"><code>polishCollection = db.result2Pol;
+englishCollection = db.result2Eng;
+
+map = function () {
+    var x = { count : this.value.count , _id : this._id };
+    emit(&quot;maximum&quot;, { max : x } )
+}
+
+reduce = function(key,values){
+  var res = values[0];
+    for ( var i=1; i&lt;values.length; i++ ) {
+      if ( values[i].max.count &gt; res.max.count )
+         res.max = values[i].max;
+    }
+    return res;
+}
+
+var result = polishCollection.mapReduce(map, reduce, {out: {inline: 1}});
+printjson(result);
+var result2 = englishCollection.mapReduce(map, reduce, {out: {inline: 1}});
+printjson(result2);</code></pre>
+<p>Otrzymany wynik:</p>
+<pre class="js"><code>Maximum of polish sentences:
+{
+  &quot;results&quot; : [
+        {
+            &quot;_id&quot; : &quot;maximum&quot;,
+            &quot;value&quot; : {
+                &quot;max&quot; : {
+                    &quot;count&quot; : 4,
+                    &quot;_id&quot; : &quot;Nmontp&quot;
+                }
+            }
+        }
+    ],
+    &quot;timeMillis&quot; : 952,
+    &quot;counts&quot; : {
+        &quot;input&quot; : 27771,
+        &quot;emit&quot; : 27771,
+        &quot;reduce&quot; : 278,
+        &quot;output&quot; : 1
+    },
+    &quot;ok&quot; : 1
+}
+Maximum of english sentences:
+{
+    &quot;results&quot; : [
+        {
+            &quot;_id&quot; : &quot;maximum&quot;,
+            &quot;value&quot; : {
+                &quot;max&quot; : {
+                    &quot;count&quot; : 20,
+                    &quot;_id&quot; : &quot;DytTiu&quot;
+                }
+            }
+        }
+    ],
+    &quot;timeMillis&quot; : 9915,
+    &quot;counts&quot; : {
+        &quot;input&quot; : 292684,
+        &quot;emit&quot; : 292684,
+        &quot;reduce&quot; : 2927,
+        &quot;output&quot; : 1
+    },
+    &quot;ok&quot; : 1
+}</code></pre>
+<p>Sprawdźmy jakie zdania mają podane rozkłady: Rozkład <strong>Nmontp</strong>:</p>
+<pre class="js"><code>{
+  &quot;_id&quot;: &quot;Nmontp&quot;,
+  &quot;value&quot;: {
+    &quot;list&quot;: [
+      &quot;Nie ma odpowiedzi na twoje pytanie.&quot;,
+      &quot;Nie musisz odpowiadać na to pytanie.&quot;,
+      &quot;Nie musisz odpowiadać na te pytania.&quot;,
+      &quot;Nie mamy odpowiedzi na to pytanie.&quot;
+    ],
+    &quot;count&quot;: 4
+  }
+}</code></pre>
+<p>Rozkład <strong>DytTiu</strong>:</p>
+<pre class="js"><code>{
+  &quot;_id&quot;: &quot;DytTiu&quot;,
+  &quot;value&quot;: {
+    &quot;list&quot;: [
+      &quot;Do you think Tom is ugly?&quot;,
+      &quot;Do you think Tom is unapproachable?&quot;,
+      &quot;Do you think Tom is unbiased?&quot;,
+      &quot;Do you think Tom is unfair?&quot;,
+      &quot;Do you think Tom is unfriendly?&quot;,
+      &quot;Do you think Tom is unhappy?&quot;,
+      &quot;Do you think Tom is uninteresting?&quot;,
+      &quot;Do you think Tom is unkind?&quot;,
+      &quot;Do you think Tom is unlucky?&quot;,
+      &quot;Do you think Tom is unpleasant?&quot;,
+      &quot;Do you think Tom is unpredictable?&quot;,
+      &quot;Do you think Tom is unprejudiced?&quot;,
+      &quot;Do you think Tom is unprincipled?&quot;,
+      &quot;Do you think Tom is unreliable?&quot;,
+      &quot;Do you think Tom is unscrupulous?&quot;,
+      &quot;Do you think Tom is unsociable?&quot;,
+      &quot;Do you think Tom is untidy?&quot;,
+      &quot;Do you think Tom is untrustworthy?&quot;,
+      &quot;Do you think Tom is upbeat?&quot;,
+      &quot;Do you think Tom is unsophisticated?&quot;
+    ],
+    &quot;count&quot;: 20
+  }
+}</code></pre>
+</div>
+<div id="obliczenie-ilosci-samogosek-i-spogosek-w-sowach---aeiou.js" class="section level4">
+<h4>Obliczenie ilości samogłosek i spółgłosek w słowach - aeiou.js</h4>
+<p>Policzymy tu wyłącznie samogłoski angielskie, ponieważ dodatkowe polskie samogłoski rzadko występowały jako pierwsza litera w słowie.</p>
+<p>Kod pliku:</p>
+<pre class="js"><code>polishCollection = db.polishSentences;
+englishCollection = db.englishSentences;
+
+map = function(){
+  var sam = 0;
+  var spol = 0;
+  var split = this.originalText.toLowerCase().match(/\b\w/g);
+  var result = split.join(&quot;&quot;);
+  var r = result.match(/[aeiou]/g);
+  var s = result.match(/[^aeiou]/g);
+  if(r){
+    sam = r.length;
+  }
+  if(s){
+    spol = s.length;
+  }
+  emit(&quot;answer&quot;,{samo: sam,spol: spol});
+};
+
+reduce = function(key,values){
+  var a = values[0];
+  for(var i=1; i &lt; values.length;i++){
+    var b = values[i];
+     a.samo += b.samo;
+     a.spol += b.spol;
+  }
+  return a;
+};
+
+var a = polishCollection.mapReduce(map, reduce, {out: {inline: 1}});
+var b = englishCollection.mapReduce(map, reduce, {out: {inline: 1}});
+print &quot;Polish sentences:\n&quot;
+printjson(a);
+print &quot;English sentences:\n&quot;
+printjson(b);</code></pre>
+<p>Otrzymany wynik:</p>
+<pre class="js"><code>Polish sentences:
+{
+  &quot;results&quot; : [
+        {
+            &quot;_id&quot; : &quot;answer&quot;,
+            &quot;value&quot; : {
+                &quot;samo&quot; : 37873,
+                &quot;spol&quot; : 211243
+            }
+        }
+    ],
+    &quot;timeMillis&quot; : 884,
+    &quot;counts&quot; : {
+        &quot;input&quot; : 27934,
+        &quot;emit&quot; : 27934,
+        &quot;reduce&quot; : 280,
+        &quot;output&quot; : 1
+    },
+    &quot;ok&quot; : 1
+}
+English sentences:
+{
+    &quot;results&quot; : [
+        {
+            &quot;_id&quot; : &quot;answer&quot;,
+            &quot;value&quot; : {
+                &quot;samo&quot; : 587866,
+                &quot;spol&quot; : 1892526
+            }
+        }
+    ],
+    &quot;timeMillis&quot; : 8452,
+    &quot;counts&quot; : {
+        &quot;input&quot; : 301120,
+        &quot;emit&quot; : 301120,
+        &quot;reduce&quot; : 3012,
+        &quot;output&quot; : 1
+    },
+    &quot;ok&quot; : 1
+}</code></pre>
+</div>
+<div id="zestawienie-czasow-wykonania-mapreduce-w-mongo-2.6.6" class="section level4">
+<h4>Zestawienie czasów wykonania MapReduce w mongo 2.6.6</h4>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Kolekcja</th>
+<th align="left">split.js</th>
+<th align="left">splitWithSentence.js</th>
+<th align="left">distributions.js</th>
+<th align="left">maxNotUnique.js</th>
+<th align="left">aeiou.js</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">polishSentences</td>
+<td align="left">1.5 s</td>
+<td align="left">1.7 s</td>
+<td align="left">0.6 s</td>
+<td align="left">1 s</td>
+<td align="left">0.9 s</td>
+</tr>
+<tr class="even">
+<td align="left">englishSentences</td>
+<td align="left">16 s</td>
+<td align="left">19 s</td>
+<td align="left">6.3 s</td>
+<td align="left">10 s</td>
+<td align="left">8.5 s</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="inne-przypadki" class="section level3">
+<h3>Inne przypadki:</h3>
+<p>Będziemy badać unikalność oraz czas wykonania skryptów w MongoDB.</p>
+<div id="rozkady-liter-bez-tak-zwanych-stop-sow." class="section level4">
+<h4>Rozkłady liter bez tak zwanych stop-słów.</h4>
+<p>Usuniemy z sentencji stop słowa i sprawdzimy unikalność rozkładów liter.</p>
+</div>
+<div id="posortowanie-rozkadow-liter." class="section level4">
+<h4>Posortowanie rozkładów liter.</h4>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Kolekcja</th>
+<th align="left">splitSort.js</th>
+<th align="left">splitWithSentence.js</th>
+<th align="left">distributions.js</th>
+<th align="left">maxNotUnique.js</th>
+<th align="left">aeiou.js</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">polishSentences</td>
+<td align="left">1.5 s</td>
+<td align="left">1.8 s</td>
+<td align="left">0.6 s</td>
+<td align="left">0.7 s</td>
+<td align="left">0.9 s</td>
+</tr>
+<tr class="even">
+<td align="left">englishSentences</td>
+<td align="left">17 s</td>
+<td align="left">19 s</td>
+<td align="left">6 s</td>
+<td align="left">7 s</td>
+<td align="left">8.3 s</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="nierozroznianie-wielkich-i-maych-liter." class="section level4">
+<h4>Nierozróżnianie wielkich i małych liter.</h4>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Kolekcja</th>
+<th align="left">splitToLower.js</th>
+<th align="left">splitWithSentence.js</th>
+<th align="left">distributions.js</th>
+<th align="left">maxNotUnique.js</th>
+<th align="left">aeiou.js</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">polishSentences</td>
+<td align="left">1.5 s</td>
+<td align="left">1.8 s</td>
+<td align="left">0.6 s</td>
+<td align="left">0.7 s</td>
+<td align="left">0.9 s</td>
+</tr>
+<tr class="even">
+<td align="left">englishSentences</td>
+<td align="left">16 s</td>
+<td align="left">19 s</td>
+<td align="left">6 s</td>
+<td align="left">7 s</td>
+<td align="left">8.3 s</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="nierozroznianie-wielkich-i-maych-liter-z-posortowaniem." class="section level4">
+<h4>Nierozróżnianie wielkich i małych liter z posortowaniem.</h4>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Kolekcja</th>
+<th align="left">splitToLower.js</th>
+<th align="left">splitWithSentence.js</th>
+<th align="left">distributions.js</th>
+<th align="left">maxNotUnique.js</th>
+<th align="left">aeiou.js</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">polishSentences</td>
+<td align="left">1.7 s</td>
+<td align="left">1.7 s</td>
+<td align="left">0.6 s</td>
+<td align="left">0.7 s</td>
+<td align="left">0.9 s</td>
+</tr>
+<tr class="even">
+<td align="left">englishSentences</td>
+<td align="left">18 s</td>
+<td align="left">18 s</td>
+<td align="left">6 s</td>
+<td align="left">7 s</td>
+<td align="left">8.3 s</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="podsumowanie-wynikow" class="section level4">
+<h4>Podsumowanie wyników:</h4>
+<p>Dla języka polskiego:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="left">Orginalny przypadek</th>
+<th align="left">Bez stop słów</th>
+<th align="left">Posortowanie liter</th>
+<th align="left">Nierozróżnianie wielkości liter</th>
+<th align="left">Nierozróżnianie liter + posortowanie</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Unikalne rozkłady</td>
+<td align="left">27613</td>
+<td align="left">0</td>
+<td align="left">27372</td>
+<td align="left">27586</td>
+<td align="left">27366</td>
+</tr>
+<tr class="even">
+<td align="left">Nieunikalne rozkłady</td>
+<td align="left">321</td>
+<td align="left">0</td>
+<td align="left">562</td>
+<td align="left">348</td>
+<td align="left">568</td>
+</tr>
+</tbody>
+</table>
+<p>Dla języka angielskiego:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="left">Orginalny przypadek</th>
+<th align="left">Bez stop słów</th>
+<th align="left">Posortowanie liter</th>
+<th align="left">Nierozróżnianie wielkości liter</th>
+<th align="left">Nierozróżnianie liter + posortowanie</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Unikalne rozkłady</td>
+<td align="left">285367</td>
+<td align="left">0</td>
+<td align="left">254439</td>
+<td align="left">283595</td>
+<td align="left">254210</td>
+</tr>
+<tr class="even">
+<td align="left">Nieunikalne rozkłady</td>
+<td align="left">15753</td>
+<td align="left">0</td>
+<td align="left">46681</td>
+<td align="left">17525</td>
+<td align="left">46910</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 </div>

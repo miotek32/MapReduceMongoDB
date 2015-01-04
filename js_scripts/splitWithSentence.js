@@ -18,4 +18,6 @@ reduce = function(key,values){
 };
 
 var resultPolish = polishCollection.mapReduce(map, reduce, {out: "result2Pol"});
+printjson(resultPolish);
 var resultEnglish = englishCollection.mapReduce(map, reduce, {out: "result2Eng"});
+printjson(resultEnglish);

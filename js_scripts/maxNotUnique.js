@@ -1,8 +1,8 @@
-polishCollection = db.result2Pol;
-englishCollection = db.result2Eng;
+polishCollection = db.resultPol;
+englishCollection = db.resultEng;
 
 map = function () {
-    var x = { count : this.value.count , _id : this._id };
+    var x = { count : this.value , _id : this._id };
     emit("maximum", { max : x } )
 }
 
