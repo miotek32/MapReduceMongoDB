@@ -1,6 +1,14 @@
-# Map reduce on MongoDB
-Mateusz Miotk  
-04.01.2015  
+---
+title: "Map reduce on MongoDB"
+author: "Mateusz Miotk"
+date: "04.01.2015"
+output:
+  html_document:
+    toc: true
+    keep_md: yes
+    theme: readable
+  pdf_document: default
+---
 
 ```
 Sprzęt: 
@@ -249,5 +257,127 @@ Statistic for English sentences:
 		"output" : 1
 	},
 	"ok" : 1
+}
+```
+#### Obliczenie maximum z występowania rozkładu liter - maxNotUnique.js
+
+Teraz policzymy jaki rozkład liter najczęsciej występuje w sentencjach.
+
+Kod pliku:
+```js
+polishCollection = db.result2Pol;
+englishCollection = db.result2Eng;
+
+map = function () {
+    var x = { count : this.value.count , _id : this._id };
+    emit("maximum", { max : x } )
+}
+
+reduce = function(key,values){
+  var res = values[0];
+    for ( var i=1; i<values.length; i++ ) {
+      if ( values[i].max.count > res.max.count )
+         res.max = values[i].max;
+    }
+    return res;
+}
+
+var result = polishCollection.mapReduce(map, reduce, {out: {inline: 1}});
+printjson(result);
+var result2 = englishCollection.mapReduce(map, reduce, {out: {inline: 1}});
+printjson(result2);
+```
+Otrzymany wynik:
+```js
+Maximum of polish sentences:
+{
+  "results" : [
+		{
+			"_id" : "maximum",
+			"value" : {
+				"max" : {
+					"count" : 4,
+					"_id" : "Nmontp"
+				}
+			}
+		}
+	],
+	"timeMillis" : 952,
+	"counts" : {
+		"input" : 27771,
+		"emit" : 27771,
+		"reduce" : 278,
+		"output" : 1
+	},
+	"ok" : 1
+}
+Maximum of english sentences:
+{
+	"results" : [
+		{
+			"_id" : "maximum",
+			"value" : {
+				"max" : {
+					"count" : 20,
+					"_id" : "DytTiu"
+				}
+			}
+		}
+	],
+	"timeMillis" : 9915,
+	"counts" : {
+		"input" : 292684,
+		"emit" : 292684,
+		"reduce" : 2927,
+		"output" : 1
+	},
+	"ok" : 1
+}
+```
+Sprawdźmy jakie zdania mają podane rozkłady:
+Rozkład **Nmontp**:
+```js
+{
+  "_id": "Nmontp",
+  "value": {
+    "list": [
+      "Nie ma odpowiedzi na twoje pytanie.",
+      "Nie musisz odpowiadać na to pytanie.",
+      "Nie musisz odpowiadać na te pytania.",
+      "Nie mamy odpowiedzi na to pytanie."
+    ],
+    "count": 4
+  }
+}
+```
+Rozkład **DytTiu**:
+```js
+{
+  "_id": "DytTiu",
+  "value": {
+    "list": [
+      "Do you think Tom is ugly?",
+      "Do you think Tom is unapproachable?",
+      "Do you think Tom is unbiased?",
+      "Do you think Tom is unfair?",
+      "Do you think Tom is unfriendly?",
+      "Do you think Tom is unhappy?",
+      "Do you think Tom is uninteresting?",
+      "Do you think Tom is unkind?",
+      "Do you think Tom is unlucky?",
+      "Do you think Tom is unpleasant?",
+      "Do you think Tom is unpredictable?",
+      "Do you think Tom is unprejudiced?",
+      "Do you think Tom is unprincipled?",
+      "Do you think Tom is unreliable?",
+      "Do you think Tom is unscrupulous?",
+      "Do you think Tom is unsociable?",
+      "Do you think Tom is untidy?",
+      "Do you think Tom is untrustworthy?",
+      "Do you think Tom is upbeat?",
+      "Do you think Tom is unsophisticated?"
+    ],
+    "count": 20
+  }
 }
 ```

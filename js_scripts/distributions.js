@@ -1,4 +1,3 @@
-//How many sentences has distribution greater than one
 resultPol = db.resultPol;
 resultEng = db.resultEng;
 
