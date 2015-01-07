@@ -644,6 +644,290 @@ Dla języka angielskiego:
 
 ![graph](images/english.png)
 
+### Optymalizacja MapReduce
+
+Ponieważ skrypty zajmują trochę czasu postanowiłem zoptymalizować je pod względem szybkości. Opieram się tylko tutaj o jedną procedurę MapReduce zawarta w pliku **split.js**.
+
+**UWAGA** 
+Poniższe skrypty są zapisane w folderze **faster_mapReduce**.
+
+#### JSMode - split.js
+
+Należy lekko zmodyfikować program.
+Zamiast
+```js
+<nazwa kolekcji>.mapreduce()
+```
+użyjemy polecenia: 
+```js
+<nazwa kolekcji>.runCommand()
+```
+Kod skryptu: 
+```js
+polishCollection = db.polishSentences;
+englishCollection = db.englishSentences;
+
+map = function(){
+  var split = this.originalText.match(/\b\w/g);
+  var result = split.join("");
+    emit(result,1);
+};
+
+reduce = function(key,values){
+  return Array.sum(values);
+};
+
+var resultPolish = db.runCommand({
+  mapreduce: "polishSentences",
+  map: map,
+  reduce: reduce,
+  out: "resultFast",
+  sort: {originalText:1},
+  jsMode: true
+})
+printjson(resultPolish);
+var resultEnglish = db.runCommand({
+  mapreduce: "englishSentences",
+  map: map,
+  reduce: reduce,
+  out: "resultFast2",
+  sort: {originalText:1},
+  jsMode: true
+})
+printjson(resultEnglish);
+```
+Otrzymany rezultat jest następujący: 
+```js
+{
+  "result" : "resultFast",
+	"timeMillis" : 1364,
+	"counts" : {
+		"input" : 27934,
+		"emit" : 27934,
+		"reduce" : 158,
+		"output" : 27771
+	},
+	"ok" : 1
+}
+{
+	"result" : "resultFast2",
+	"timeMillis" : 14244,
+	"counts" : {
+		"input" : 301120,
+		"emit" : 301120,
+		"reduce" : 7317,
+		"output" : 292684
+	},
+	"ok" : 1
+}
+```
+
+#### Użycie wielowątkowości do tworzenia wielu kolekcji - splitParallel.js
+
+Jeśli dane można łatwo podzielić na zbiory to możemy użyć wówczas nieużywanych rdzeni procesora.
+Każdy z nich będzie przetwarzał jakąś część danych i zapisywał je do danej kolekcji.
+
+**UWAGA 1**
+Aby użyć wielowątkowości w **MongoDB** należy załadować plik **parallelTest.js**, gdyż w nim zawarta jest procedura tworząca nowy wątek w MongoDB. 
+Informacja o tym zawarta jest [tutaj](https://jira.mongodb.org/browse/SERVER-13485)
+
+**UWAGA 2**
+Aby wielowątkowość działała poprawnie, funkcje **map** oraz **reduce** muszą być ściśle zaimplementowane w poleceniu **runCommand()**
+Dany proces wykonuje następujący skrypt:
+```js
+polishCollection = db.polishSentences;
+englishCollection = db.englishSentences;
+//This file is very important to run threads in MongoDB
+load("parallelTester.js");
+//Split data to run in threads
+var res = db.runCommand({
+  splitVector: "test.englishSentences",
+  keyPattern: {_id: 1},
+  maxChunkSizeBytes: 4*1024*1024
+});
+var keys = res.splitKeys;
+//MapReduce command
+var command = function(min,max){
+  return db.runCommand({
+  mapreduce: "englishSentences",
+  map: function(){
+    var split = this.originalText.match(/\b\w/g);
+    var result = split.join("");
+    emit(result,1);
+  },
+  reduce: function(key,values){ return Array.sum(values)},
+  out: "resultParallel" + min,
+  sort: {_id:1},
+  query: {_id: {$gte: min, $lt: max}},
+})};
+
+var numberCores = 4
+var inc = (Math.floor(keys.length) / numberCores) + 1;
+threads = [];
+//Run MapReduce in threads
+for (var i = 0; i < numberCores; ++i) {
+   var min = (i == 0) ? 0 : keys[i * inc]._id;
+   var max = (i * inc + inc >= keys.length) ? MaxKey : keys[i * inc + inc]._id ;
+   print("min:" + min + " max:" + max);
+   var t = new ScopedThread(command, min, max);
+   threads.push(t);
+   t.start()
+}
+//Print results on threads
+for (var i in threads){
+  var t = threads[i];
+  t.join();
+  printjson(t.returnData());
+}
+```
+Otrzymany rezultat jest następujący:
+```js
+min:0 max:107550
+min:107550 max:197175
+min:197175 max:286800
+min:286800 max:[object MaxKey]
+connecting to: test
+connecting to: test
+connecting to: test
+connecting to: test
+{
+  "result" : "resultParallel0",
+	"timeMillis" : 27971,
+	"counts" : {
+		"input" : 107549,
+		"emit" : 107549,
+		"reduce" : 1283,
+		"output" : 106227
+	},
+	"ok" : 1
+}
+{
+	"result" : "resultParallel107550",
+	"timeMillis" : 27690,
+	"counts" : {
+		"input" : 89625,
+		"emit" : 89625,
+		"reduce" : 1532,
+		"output" : 87992
+	},
+	"ok" : 1
+}
+{
+	"result" : "resultParallel197175",
+	"timeMillis" : 27273,
+	"counts" : {
+		"input" : 89625,
+		"emit" : 89625,
+		"reduce" : 1902,
+		"output" : 87459
+	},
+	"ok" : 1
+}
+{
+	"result" : "resultParallel286800",
+	"timeMillis" : 17881,
+	"counts" : {
+		"input" : 14321,
+		"emit" : 14321,
+		"reduce" : 120,
+		"output" : 14201
+	},
+	"ok" : 1
+}
+```
+
+#### Użycie wielowątkowości do zapisu w różnych bazach danych - splitParallel2.js
+Powtórzymy powyższy eksperyment z różnicą taką iż dane będziemy zapisywać w różnych bazach, a nie jak do tej pory w różnych kolekcjach. Kod różni się tylko wyłącznie w zmiennej command:
+```js
+var command = function(min,max){
+  return db.runCommand({
+  mapreduce: "englishSentences",
+  map: function(){
+    var split = this.originalText.match(/\b\w/g);
+    var result = split.join("");
+    emit(result,1);
+  },
+  reduce: function(key,values){ return Array.sum(values)},
+  out: {replace: "resultParallel" + min, db: "parDB" + min},
+  sort: {_id:1},
+  query: {_id: {$gte: min, $lt: max}},
+})};
+```
+Rezultat jest następujący: 
+```js
+min:0 max:107550
+min:107550 max:197175
+min:197175 max:286800
+min:286800 max:[object MaxKey]
+connecting to: test
+connecting to: test
+connecting to: test
+connecting to: test
+{
+  "result" : {
+		"db" : "parDB0",
+		"collection" : "resultParallel0"
+	},
+	"timeMillis" : 9554,
+	"counts" : {
+		"input" : 107549,
+		"emit" : 107549,
+		"reduce" : 1283,
+		"output" : 106227
+	},
+	"ok" : 1
+}
+{
+	"result" : {
+		"db" : "parDB107550",
+		"collection" : "resultParallel107550"
+	},
+	"timeMillis" : 9121,
+	"counts" : {
+		"input" : 89625,
+		"emit" : 89625,
+		"reduce" : 1532,
+		"output" : 87992
+	},
+	"ok" : 1
+}
+{
+	"result" : {
+		"db" : "parDB197175",
+		"collection" : "resultParallel197175"
+	},
+	"timeMillis" : 8880,
+	"counts" : {
+		"input" : 89625,
+		"emit" : 89625,
+		"reduce" : 1902,
+		"output" : 87459
+	},
+	"ok" : 1
+}
+{
+	"result" : {
+		"db" : "parDB286800",
+		"collection" : "resultParallel286800"
+	},
+	"timeMillis" : 1666,
+	"counts" : {
+		"input" : 14321,
+		"emit" : 14321,
+		"reduce" : 120,
+		"output" : 14201
+	},
+	"ok" : 1
+}
+```
+
+#### Zestawienie eksperymentu w tabeli
+Eksperyment został wykonany tylko na jednym procesie MapReduce, którym jest **split.js** na kolekcji **englishSentences**.
+
+|Proces optymalizacji|Bez optymalizacji|JSMode|Zapis do różnych kolekcji|Zapis do różnych baz i kolekcji|
+|--------------------|-----------------|------|--------------------------|-------------------------------|
+|Czas|16 s|14 s|27 sekund na jeden rdzeń|9 sekund na jeden rdzeń|
+
 ### Wnioski
 - Jeśli chodzi o rozkład pierwszych liter to samogłoski stanowią około 25% liter.
 - Dla otrzymanych danych usunięcie stop słów diametralnie zmniejszyło jego ilość, aby otrzymać zdanie składające się z 6-12 słów.
@@ -651,5 +935,7 @@ Dla języka angielskiego:
 - Dla języka polskiego jest bardzo mało nieunikalnych rozkładów, ale zbiór testowy był niewielki.
 - Jeśli do podanej metody dodamy jeszcze występowanie pomiędzy literami znaków specjalnych czy dodawaniu większej ilości dużych liter czy nawet liczb to nasze hasło nie powinno być tak łatwo odgadnięte.
 - Jeśli chodzi o MongoDB 2.8.0.rc4 to MapReduce wykonuje się generalnie wolniej.
+- Jeśli chodzi o proces optymalizacji MapReduce to opłaca się używać trybu JSMode oraz wielowątkowości do zapisu danych w różnych bazach.
+- Wielowątkowość nie zawsze oznacza szybciej ponieważ należy doliczyć do tego komunikację między procesami oraz koszt podzielenia danych.
 
 ![result](images/mongoStatistic.png)
