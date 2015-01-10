@@ -11,7 +11,6 @@ reduce = function(key,values){
   return Array.sum(values);
 };
 
-//var resultPolish = polishCollection.mapReduce(map, reduce, {out: "resultPol"}, sort:{originalText: 1});
 var resultPolish = db.runCommand({
   mapreduce: "polishSentences",
   map: map,
@@ -21,7 +20,6 @@ var resultPolish = db.runCommand({
   jsMode: true
 })
 printjson(resultPolish);
-//var resultEnglish = englishCollection.mapReduce(map, reduce, {out: "resultEng"});
 var resultEnglish = db.runCommand({
   mapreduce: "englishSentences",
   map: map,

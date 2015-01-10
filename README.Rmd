@@ -122,6 +122,80 @@ Dane zostały zapisane odpowiednio w kolekcjach: **polishSentences** oraz **engl
 
 ### MapReduce w sentencjach polskich i angielskich.
 
+#### Rozkład występowania pierwszych liter vs rozkład występowania wszystkich liter
+
+Bierzemy tu pod uwagę wyłącznie małe litery + cyfry.
+Aby obliczyć powyższe rozkłady należy uruchomić w konsoli mongo skrypty **lettersPol.js** oraz **lettersEng.js**.
+
+Wykres występowań liter dla języka polskiego: 
+![firstLetters](images/firstLettersPol.png)
+![allLetters](images/allLettersPol.png)
+
+Najczęstsze 3 litery występujących na pierwszej pozycji: 
+```js
+{
+  "_id": "p",
+  "value": 21674
+}
+{
+  "_id": "n",
+  "value": 21268
+}
+{
+  "_id": "w",
+  "value": 20671
+}
+```
+Najczęstsze 3 litery występujących na wszystkich pozycjach: 
+```js
+{
+  "_id": "i",
+  "value": 90984
+}
+{
+  "_id": "e",
+  "value": 90671
+}
+{
+  "_id": "a",
+  "value": 87216
+}
+```
+
+Wykres wykres występowań liter dla języka angielskiego: 
+![firstLetters](images/firstLettersEng.png)
+![allLetters](images/allLettersEng.png)
+
+Najczęstsze 3 litery występujących na pierwszej pozycji: 
+```js
+{
+  "_id": "p",
+  "value": 21674
+}
+{
+  "_id": "n",
+  "value": 21268
+}
+{
+  "_id": "w",
+  "value": 20671
+}
+```
+Najczęstsze 3 litery występujących na wszystkich pozycjach: 
+```js
+{
+  "_id": "e",
+  "value": 1135093
+}
+{
+  "_id": "t",
+  "value": 954772
+}
+{
+  "_id": "o",
+  "value": 863300
+}
+```
 #### Zapisanie rozkładów liter do kolekcji - split.js
 
 Kod pliku:
@@ -577,10 +651,10 @@ English sentences:
 
 #### Zestawienie czasów wykonania MapReduce w mongo 2.6.6
 
-|Kolekcja|split.js|splitWithSentence.js|distributions.js|maxNotUnique.js|aeiou.js|
-|--------|--------|--------------------|----------------|---------------|--------|
-|polishSentences|1.5 s|1.7 s|0.6 s|1 s|0.9 s|
-|englishSentences|16 s|19 s|6.3 s|10 s|8.5 s|
+|Kolekcja|letters.js|split.js|splitWithSentence.js|distributions.js|maxNotUnique.js|aeiou.js|
+|----------|--------|--------|--------------------|----------------|---------------|--------|
+|polishSentences|4 s|1.5 s|1.7 s|0.6 s|1 s|0.9 s|
+|englishSentences|41 s|16 s|19 s|6.3 s|10 s|8.5 s|
 
 #### Zestawienie czasów wykonania MapReduce w mongo 2.8.0.rc4 + wiredTiger + zlib
 
