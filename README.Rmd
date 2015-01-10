@@ -169,16 +169,16 @@ Wykres wykres występowań liter dla języka angielskiego:
 Najczęstsze 3 litery występujących na pierwszej pozycji: 
 ```js
 {
-  "_id": "p",
-  "value": 21674
+  "_id": "t",
+  "value": 462360
 }
 {
-  "_id": "n",
-  "value": 21268
+  "_id": "i",
+  "value": 224958
 }
 {
-  "_id": "w",
-  "value": 20671
+  "_id": "a",
+  "value": 201324
 }
 ```
 Najczęstsze 3 litery występujących na wszystkich pozycjach: 
