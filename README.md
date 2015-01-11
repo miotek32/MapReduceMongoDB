@@ -119,6 +119,8 @@ Dane zostały zapisane odpowiednio w kolekcjach: **polishSentences** oraz **engl
 Bierzemy tu pod uwagę wyłącznie małe litery + cyfry.
 Aby obliczyć powyższe rozkłady należy uruchomić w konsoli mongo skrypty **lettersPol.js** oraz **lettersEng.js**.
 
+**UWAGA** W sentencjach polskich zliczone są wszystkie znaki dialektyczne tzn: również znaki występujące nie tylko w języku polskim ale też niemieckim, gdyż dane posiadają słowa w tym języku np: Peter studiuje w M**ü**nchen od roku.
+
 Wykres występowań liter dla języka polskiego: 
 ![firstLetters](images/firstLettersPol.png)
 ![allLetters](images/allLettersPol.png)
@@ -127,15 +129,15 @@ Najczęstsze 3 litery występujących na pierwszej pozycji:
 ```js
 {
   "_id": "p",
-  "value": 21674
+  "value": 21223
 }
 {
   "_id": "n",
-  "value": 21268
+  "value": 19242
 }
 {
   "_id": "w",
-  "value": 20671
+  "value": 17333
 }
 ```
 Najczęstsze 3 litery występujących na wszystkich pozycjach: 

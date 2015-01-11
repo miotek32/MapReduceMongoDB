@@ -1,4 +1,4 @@
-load("countLetters.js");
+load("countLettersPol.js");
 print("Compute distribution for first letters")
 var firstLettersPolish = polishCollection.mapReduce(map, reduce, {out: "firstLettersPol"});
 printjson(firstLettersPolish);
